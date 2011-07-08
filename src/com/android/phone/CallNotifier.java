@@ -242,6 +242,7 @@ public class CallNotifier extends Handler
                     PhoneBase pb =  (PhoneBase)((AsyncResult)msg.obj).result;
 
                     if ((pb.getState() == Phone.State.RINGING)
+                            && mRinger.isRinging()
                             && (mSilentRingerRequested == false)) {
                         if (DBG) log("RINGING... (PHONE_INCOMING_RING event)");
                         mRinger.ring();
