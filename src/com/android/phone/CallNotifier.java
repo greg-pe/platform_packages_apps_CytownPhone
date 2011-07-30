@@ -563,8 +563,7 @@ public class CallNotifier extends Handler
 
             // In this case, just log the request and ring.
             if (VDBG) log("RINGING... (request to ring arrived while query is running)");
-            mRinger.ring();
-            mHasRingingCall = true;
+            startRinging();
 
             // in this case, just fall through like before, and call
             // showIncomingCall().
@@ -626,8 +625,7 @@ public class CallNotifier extends Handler
 
         // Ring, either with the queried ringtone or default one.
         if (VDBG) log("RINGING... (onCustomRingQueryComplete)");
-        mRinger.ring();
-        mHasRingingCall = true;
+        startRinging();
 
         // ...and display the incoming call to the user:
         if (DBG) log("- showing incoming call (custom ring query complete)...");
@@ -803,8 +801,7 @@ public class CallNotifier extends Handler
             // TODO: Confirm that this call really *is* unnecessary, and if so,
             // remove it!
             if (DBG) log("stopRing()... (OFFHOOK state)");
-            mRinger.stopRing();
-            mHasRingingCall = false;
+            stopRinging();
 
             // put a icon in the status bar
             if (DBG) log("- updating notification for phone state change...");
@@ -1017,13 +1014,11 @@ public class CallNotifier extends Handler
                 NotificationMgr.getDefault().cancelCallInProgressNotification();
             } else {
                 if (DBG) log("stopRing()... (onDisconnect)");
-                mRinger.stopRing();
-                mHasRingingCall = false;
+                stopRinging();
             }
         } else { // GSM
             if (DBG) log("stopRing()... (onDisconnect)");
-            mRinger.stopRing();
-            mHasRingingCall = false;
+            stopRinging();
         }
 
         // stop call waiting tone if needed when disconnecting
@@ -2096,6 +2091,16 @@ public class CallNotifier extends Handler
         }
         if (DBG) log("- getPresentation: presentation: " + presentation);
         return presentation;
+    }
+
+    private void startRinging() {
+        mRinger.ring();
+        mHasRingingCall = true;
+    }
+
+    private void stopRinging() {
+        mRinger.stopRing();
+        mHasRingingCall = false;
     }
 
     private void log(String msg) {
