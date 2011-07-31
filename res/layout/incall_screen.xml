@@ -20,6 +20,10 @@
               android:layout_height="match_parent"
               >
 
+	<SurfaceView android:id="@+id/campreview"
+		android:layout_weight="1" android:layout_height="1px" android:layout_width="1px">
+	</SurfaceView>
+
     <!-- Main frame containing the main set of in-call UI elements. -->
     <FrameLayout android:id="@+id/mainFrame"
         android:layout_width="match_parent"

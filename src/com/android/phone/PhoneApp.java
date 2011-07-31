@@ -68,10 +68,13 @@ import android.os.Vibrator;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 
+import android.provider.Settings;
+
 /**
  * Top-level Application class for the Phone app.
  */
-public class PhoneApp extends Application implements AccelerometerListener.OrientationListener {
+public class PhoneApp extends Application implements AccelerometerListener.OrientationListener,
+		LightSensorListener.LightSensorListenerIntf, CameraLight.CameraLightListener {
     /* package */ static final String LOG_TAG = "PhoneApp";
 
     /**
@@ -203,6 +206,17 @@ public class PhoneApp extends Application implements AccelerometerListener.Orien
     private int mStatusBarDisableCount;
     private AccelerometerListener mAccelerometerListener;
     private int mOrientation = AccelerometerListener.ORIENTATION_UNKNOWN;
+    
+    private int mLastOrientation = AccelerometerListener.ORIENTATION_FLIPDOWN;
+    private boolean mRingerMuted = false;
+    private CameraLight mCameraLight;
+    private LightSensorListener mLightSensorListener;
+    private boolean mMaximizedVolume = false;
+    private boolean mRestoredVolume = false;
+    private AudioManager audioManager;
+    private int mMaxVolume;
+    private int mDesiredVolume;
+
 
     // Broadcast receiver for various intent broadcasts (see onCreate())
     private final BroadcastReceiver mReceiver = new PhoneAppBroadcastReceiver();
@@ -502,6 +516,7 @@ public class PhoneApp extends Application implements AccelerometerListener.Orien
             // create mAccelerometerListener only if we are using the proximity sensor
             if (proximitySensorModeEnabled()) {
                 mAccelerometerListener = new AccelerometerListener(this, this);
+                if (mLightSensorListener == null) mLightSensorListener = new LightSensorListener(this, this);
             }
 
             mKeyguardManager = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
@@ -612,6 +627,14 @@ public class PhoneApp extends Application implements AccelerometerListener.Orien
                     Phone.TTY_MODE_OFF);
             mHandler.sendMessage(mHandler.obtainMessage(EVENT_TTY_PREFERRED_MODE_CHANGED, 0));
         }
+        
+        // dx: get volume for ringer
+        audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        mMaxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_RING);
+		mDesiredVolume = audioManager.getStreamVolume(AudioManager.STREAM_RING);
+		if (VDBG) Log.d(LOG_TAG, "dx: ringvol=" + mDesiredVolume + ", maxvol=" + mMaxVolume);
+		// dx end
+
         // Read HAC settings and configure audio hardware
         if (getResources().getBoolean(R.bool.hac_enabled)) {
             int hac = android.provider.Settings.System.getInt(phone.getContext().getContentResolver(),
@@ -1110,6 +1133,40 @@ public class PhoneApp extends Application implements AccelerometerListener.Orien
                        + ", showingDisc " + showingDisconnectedConnection + ")");
         // keepScreenOn == true means we'll hold a full wake lock:
         requestWakeState(keepScreenOn ? WakeState.FULL : WakeState.SLEEP);
+
+        // dx: phone is ringing?
+        if (isRinging) {
+        	// reread the volume
+			mMaxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_RING);
+			mDesiredVolume = audioManager.getStreamVolume(AudioManager.STREAM_RING);
+			if (VDBG) Log.d(LOG_TAG, "dx: ringvol=" + mDesiredVolume + ", maxvol=" + mMaxVolume);
+			
+        	// enable accelerometer to check flipdown state
+        	if (!mAccelerometerListener.isEnabled()) {
+		    	// option enabled?
+			    if (Settings.System.getInt(getContentResolver(), Settings.System.FLIPPING_DOWN_MUTES_RINGER, 1) == 1)
+			    	mAccelerometerListener.enable(true);
+	    	}
+	    	
+			// initialize camera light listener
+			if (mCameraLight == null) mCameraLight = new CameraLight(this, mInCallScreen.getCamPreview(), this);
+
+			// "Call Me Louder" enabled?
+	    	if (Settings.System.getInt(getContentResolver(), Settings.System.CALL_ME_LOUDER, 0) == 1) {
+				// enable light sensor to check "in bag" state
+				if (!mLightSensorListener.isEnabled()) {
+				    mLightSensorListener.enable(true);
+					if (VDBG) Log.d(LOG_TAG, "dx: starting light sensor");
+				}
+				// enable camera to check "in bag" state
+				if (!mCameraLight.isEnabled()) {
+					if (VDBG) Log.d(LOG_TAG, "dx: starting camera light");
+				    mCameraLight.enable(true);
+				}
+			}
+	    }
+	    // dx end
+
     }
 
     /**
@@ -1206,6 +1263,18 @@ public class PhoneApp extends Application implements AccelerometerListener.Orien
     /* package */ void updateProximitySensorMode(Phone.State state) {
         if (VDBG) Log.d(LOG_TAG, "updateProximitySensorMode: state = " + state);
 
+        // dx: finished the call? ringer is not muted anymore!
+        if (state == Phone.State.IDLE) {
+	        if (VDBG) Log.d(LOG_TAG, "Phone idle, no more muted.");
+			mRingerMuted = false;
+			mMaximizedVolume = false;
+			mRestoredVolume = false;
+			mLastOrientation = AccelerometerListener.ORIENTATION_FLIPDOWN;
+			if (mAccelerometerListener.isEnabled()) mAccelerometerListener.enable(false);
+			if (mLightSensorListener.isEnabled()) mLightSensorListener.enable(false);
+			if (mCameraLight != null && mCameraLight.isEnabled()) mCameraLight.enable(false);
+        }
+
         if (proximitySensorModeEnabled()) {
             synchronized (mProximityWakeLock) {
                 // turn proximity sensor off and turn screen on immediately if
@@ -1253,6 +1322,67 @@ public class PhoneApp extends Application implements AccelerometerListener.Orien
     public void orientationChanged(int orientation) {
         mOrientation = orientation;
         updateProximitySensorMode(mCM.getState());
+
+        // are we being flipped down?
+       	if (orientation == AccelerometerListener.ORIENTATION_FLIPDOWN) {
+	        if ((mLastOrientation != AccelerometerListener.ORIENTATION_FLIPDOWN) && (!mRingerMuted)) {
+				notifier.silenceRinger();
+				mRingerMuted = true;        
+			}
+        }
+        mLastOrientation = orientation;
+    }
+
+    // volume control
+    private void maxVolume() {
+	    // we are in dark condition
+    	// did we maximize the volume?
+    	if (!mMaximizedVolume) {
+    		// not yet, maximize it to call the user!
+	        Log.i(LOG_TAG, "Too dark, gotta maximize volume");
+    		mMaximizedVolume = true;
+    		audioManager.setStreamVolume(AudioManager.STREAM_RING, mMaxVolume, AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE );
+    	}
+    }
+    
+    private void normalVolume() {
+    	// light enough? reduce to normal volume
+    	if (!mRestoredVolume) {
+        	Log.i(LOG_TAG, "Enough light, restoring volume");
+    		mRestoredVolume = true;
+    		audioManager.setStreamVolume(AudioManager.STREAM_RING, mDesiredVolume, AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE );
+    		
+    		// finished sensor's duty, stop it
+    		mLightSensorListener.enable(false);
+    		// stop camera light also
+    		if (mCameraLight != null) {
+    			mCameraLight.enable(false);
+    		}
+    	}
+    }
+    
+    // callback for light sensor change
+    public void lightChanged(int lightValue) {
+        if (VDBG) 
+        	Log.i(LOG_TAG, "light sensor value : " + lightValue);
+        if (lightValue <= 1600) {
+        	maxVolume();
+        }
+        else {
+        	normalVolume();
+        }
+    }
+    
+    // callback for camera light change
+    public void cameraLightChanged(int lightValue) {
+        if (VDBG)
+        	Log.i(LOG_TAG, "camera light value : " + lightValue);
+        if (lightValue <= 20) {
+        	maxVolume();
+        }
+        else {
+        	normalVolume();
+        }
     }
 
     /**
