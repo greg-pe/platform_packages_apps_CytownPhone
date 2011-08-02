@@ -628,11 +628,12 @@ public class PhoneApp extends Application implements AccelerometerListener.Orien
             mHandler.sendMessage(mHandler.obtainMessage(EVENT_TTY_PREFERRED_MODE_CHANGED, 0));
         }
         
-        // get volume for ringer
+        // dx: get volume for ringer
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         mMaxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_RING);
 		mDesiredVolume = audioManager.getStreamVolume(AudioManager.STREAM_RING);
-		if (VDBG) Log.d(LOG_TAG, "ringvol=" + mDesiredVolume + ", maxvol=" + mMaxVolume);
+		if (VDBG) Log.d(LOG_TAG, "dx: ringvol=" + mDesiredVolume + ", maxvol=" + mMaxVolume);
+		// dx end
 
         // Read HAC settings and configure audio hardware
         if (getResources().getBoolean(R.bool.hac_enabled)) {
@@ -1133,12 +1134,12 @@ public class PhoneApp extends Application implements AccelerometerListener.Orien
         // keepScreenOn == true means we'll hold a full wake lock:
         requestWakeState(keepScreenOn ? WakeState.FULL : WakeState.SLEEP);
 
-        // Is phone ringing?
+        // dx: phone is ringing?
         if (isRinging) {
-        	// check the volume
+        	// reread the volume
 			mMaxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_RING);
 			mDesiredVolume = audioManager.getStreamVolume(AudioManager.STREAM_RING);
-			if (VDBG) Log.d(LOG_TAG, "ringvol=" + mDesiredVolume + ", maxvol=" + mMaxVolume);
+			if (VDBG) Log.d(LOG_TAG, "dx: ringvol=" + mDesiredVolume + ", maxvol=" + mMaxVolume);
 			
         	// enable accelerometer to check flipdown state
         	if (!mAccelerometerListener.isEnabled()) {
@@ -1150,20 +1151,21 @@ public class PhoneApp extends Application implements AccelerometerListener.Orien
 			// initialize camera light listener
 			if (mCameraLight == null) mCameraLight = new CameraLight(this, mInCallScreen.getCamPreview(), this);
 
-		// "Louder in the dark" enabled?
-	    	if (Settings.System.getInt(getContentResolver(), Settings.System.RING_LOUDER_IN_DARK, 0) == 1) {
-				// enable light sensor to check "dark" state
+			// "Call Me Louder" enabled?
+	    	if (Settings.System.getInt(getContentResolver(), Settings.System.CALL_ME_LOUDER, 0) == 1) {
+				// enable light sensor to check "in bag" state
 				if (!mLightSensorListener.isEnabled()) {
 				    mLightSensorListener.enable(true);
-					if (VDBG) Log.d(LOG_TAG, "starting light sensor");
+					if (VDBG) Log.d(LOG_TAG, "dx: starting light sensor");
 				}
-				// enable camera to check "dark" state
+				// enable camera to check "in bag" state
 				if (!mCameraLight.isEnabled()) {
-					if (VDBG) Log.d(LOG_TAG, "starting camera light");
+					if (VDBG) Log.d(LOG_TAG, "dx: starting camera light");
 				    mCameraLight.enable(true);
 				}
 			}
 	    }
+	    // dx end
 
     }
 
@@ -1261,7 +1263,7 @@ public class PhoneApp extends Application implements AccelerometerListener.Orien
     /* package */ void updateProximitySensorMode(Phone.State state) {
         if (VDBG) Log.d(LOG_TAG, "updateProximitySensorMode: state = " + state);
 
-        // finished the call? ringer is not muted anymore!
+        // dx: finished the call? ringer is not muted anymore!
         if (state == Phone.State.IDLE) {
 	        if (VDBG) Log.d(LOG_TAG, "Phone idle, no more muted.");
 			mRingerMuted = false;

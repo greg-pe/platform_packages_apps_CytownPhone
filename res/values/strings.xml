@@ -1260,9 +1260,8 @@
     <string name="bg_incall_sum">Keep incoming call UI in background when screen is on, show notification and play ringtone only.</string>
     <string name="flip_to_silence_title">Flip to silence ringer</string>
     <string name="flip_to_silence_summary">Flip phone to silence the ringer.</string>
-    <string name="ring_louder_in_dark_title">Ring louder in the dark.</string>
-    <string name="ring_louder_in_dark_summary">Louder ring when someplace dark. (inside purse, bag, etc.)</string>
-
+    <string name="pref_call_me_louder_title">Ring louder in the dark</string>
+    <string name="pref_call_me_louder_summary">Louder ringer when in the dark (Inside purse, bag, etc.)</string>
     <!-- Use this as a default to describe the contact photo; currently for screen readers through accessibility. -->
     <string name="contactPhoto">contact photo</string>
     <!-- Use this to describe the separate conference call button; currently for screen readers through accessibility. -->
