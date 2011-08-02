@@ -454,7 +454,7 @@ public class CallFeaturesSetting extends PreferenceActivity
 
 
     private static final String FLIP_TO_SILENCE = "flip_to_silence";
-    private CheckBoxPreference mButtonFlipToSilence;
+    private CheckBoxPreference mFlipToSilence;
 
     private static final String RING_LOUDER_IN_DARK = "ring_louder_in_dark";
     private CheckBoxPreference mRingLouderInDark;
