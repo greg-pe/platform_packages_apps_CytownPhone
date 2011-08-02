@@ -452,18 +452,12 @@ public class CallFeaturesSetting extends PreferenceActivity
     private CheckBoxPreference mButtonVibCallWaiting;
     static boolean mVibCallWaiting;
 
-    // static boolean mTurnSilence;
-    // Hide this option until it is fixed.
-    // private static final String BUTTON_TURN_SILENCE     = "button_turn_silence";
-    // private CheckBoxPreference mButtonTurnSilence;
 
-    private static final String BUTTON_FLIP_TO_SILENCE = "button_flip_to_silence";
+    private static final String FLIP_TO_SILENCE = "flip_to_silence";
     private CheckBoxPreference mButtonFlipToSilence;
-    static boolean mFlipToSilence;
 
-    private static final String CALL_ME_LOUDER_PREF = "pref_call_me_louder";
-    private CheckBoxPreference mCallMeLouder;
-    static boolean mCallMeLouder;
+    private static final String RING_LOUDER_IN_DARK = "ring_louder_in_dark";
+    private CheckBoxPreference mRingLouderInDark;
 
     static boolean mLeftHand;
 
@@ -543,6 +537,14 @@ public class CallFeaturesSetting extends PreferenceActivity
             this.startActivityForResult(preference.getIntent(), VOICEMAIL_PROVIDER_CFG_ID);
             return true;
         }
+        else if (preference == mFlipToSilence) {
+            Settings.System.putInt(getContentResolver(), Settings.System.FLIP_TO_SILENCE, mFlipToSilence.isChecked() ? 1 : 0);
+            return true;
+        }
+        else if (preference == mRingLouderInDark) {
+            Settings.System.putInt(getContentResolver(), Settings.System.RING_LOUDER_IN_DARK, mRingLouderInDark.isChecked() ? 1 : 0);
+            return true;
+        }
         return false;
     }
 
@@ -601,6 +603,11 @@ public class CallFeaturesSetting extends PreferenceActivity
         }
         // always let the preference setting proceed.
         return true;
+    }
+
+   private void updateListSkipSpamCalllog(String s) {
+        int i = mListSkipSpamCalllog.findIndexOfValue(s);
+        mListSkipSpamCalllog.setSummary(getResources().getStringArray(R.array.skipSpamCalllogLables)[i]);
     }
 
     private void handleNotificationChange(Object objValue) {
@@ -1668,10 +1675,10 @@ public class CallFeaturesSetting extends PreferenceActivity
         mButtonLedNotify.setChecked(mLedNotify);
         mButtonShowOrgan = (CheckBoxPreference) prefSet.findPreference(BUTTON_SHOW_ORGAN);
         mButtonShowOrgan.setChecked(mShowOrgan);
-        mButtonFlipToSilencer = (CheckBoxPreference) prefSet.findPrefere(BUTTON_FLIP_TO_SILENCE));
-        mButtonFlipToSilence.setChecked(mFlipToSilence);
-        mCallMeLouder = (CheckBoxPreference) prefSet.findPreference(CALL_ME_LOUDER_PREF));
-        mCallMeLouder.setChecked(mCallMeLouder);
+        mFlipToSilence = (CheckBoxPreference) prefSet.findPreference(FLIP_TO_SILENCE);
+        mFlipToSilence.setChecked(Settings.System.getInt(getContentResolver(), Settings.System.FLIP_TO_SILENCE, 0) == 1);
+        mRingLouderInDark = (CheckBoxPreference) prefSet.findPreference(RING_LOUDER_IN_DARK);
+        mRingLouderInDark.setChecked(Settings.System.getInt(getContentResolver(), Settings.System.RING_LOUDER_IN_DARK, 0) == 1);
         // mButtonTurnSilence = (CheckBoxPreference) prefSet.findPreference(BUTTON_TURN_SILENCE);
         // mButtonTurnSilence.setChecked(mTurnSilence);
         mButtonLeftHand = (CheckBoxPreference) prefSet.findPreference(BUTTON_LEFT_HAND);
@@ -2275,8 +2282,6 @@ public class CallFeaturesSetting extends PreferenceActivity
         outState.putBoolean(BUTTON_RETURN_HOME, mButtonReturnHome.isChecked());
         outState.putBoolean(BUTTON_LED_NOTIFY, mButtonLedNotify.isChecked());
         outState.putBoolean(BUTTON_SHOW_ORGAN, mButtonShowOrgan.isChecked());
-        outState.putBoolean(BUTTON_FLIP_TO_SILENCE, mButtonFlipToSilence.isChecked());
-        outState.putBoolean(CALL_ME_LOUDER_PREF, mCallMeLouder.isChecked());
         //outState.putBoolean(BUTTON_TURN_SILENCE, mButtonTurnSilence.isChecked());
         outState.putBoolean(BUTTON_LEFT_HAND, mButtonLeftHand.isChecked());
         outState.putBoolean(BUTTON_VIBRATE_CALL_WAITING, mButtonVibCallWaiting.isChecked());
