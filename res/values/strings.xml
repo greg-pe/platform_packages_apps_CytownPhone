@@ -1258,6 +1258,10 @@
     <string name="rotate_incall_sum">Allow incall screen to rotate with orientation change.</string>
     <string name="bg_incall">Incoming call in background</string>
     <string name="bg_incall_sum">Keep incoming call UI in background when screen is on, show notification and play ringtone only.</string>
+    <string name="flipping_down_title">Flipping down mutes ringer</string>
+    <string name="pref_flipping_down_mutes_ringer_title">Flip phone down durring an incoming call to mute the ringer.</string>
+    <string name="pref_call_me_louder_title">Ring louder in the dark</string>
+    <string name="pref_call_me_louder_summary">Louder ringer when in the dark (Inside purse, bag, etc.)</string>
 
     <!-- Use this as a default to describe the contact photo; currently for screen readers through accessibility. -->
     <string name="contactPhoto">contact photo</string>
