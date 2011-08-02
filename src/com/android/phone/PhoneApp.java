@@ -1143,7 +1143,7 @@ public class PhoneApp extends Application implements AccelerometerListener.Orien
         	// enable accelerometer to check flipdown state
         	if (!mAccelerometerListener.isEnabled()) {
 		    	// option enabled?
-			   if (Settings.System.getInt(getContentResolver(), Settings.System.FLIP_TO_SILENCE, 1) == 1)
+			    if (Settings.System.getInt(getContentResolver(), Settings.System.FLIPPING_DOWN_MUTES_RINGER, 1) == 1)
 			    	mAccelerometerListener.enable(true);
 	    	}
 	    	
