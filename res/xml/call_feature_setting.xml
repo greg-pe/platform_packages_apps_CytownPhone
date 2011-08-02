@@ -122,6 +122,15 @@
         android:persistent="false"
         android:summary="@string/turn_silence_sum"/> -->
     <CheckBoxPreference
+        android:key="button_flip_to_silence"
+        android:title="@string/flip_to_silence_title"
+        android:persistent="false"
+        android:summary="@string/flip_to_silence_summary"/>
+    <CheckBoxPreference android:key="pref_call_me_louder"
+        android:title="@string/pref_call_me_louder_title" 
+        android:persistent="false"
+        android:summary="@string/pref_call_me_louder_summary"/>
+    <CheckBoxPreference
         android:key="button_left_hand"
         android:title="@string/left_hand"
         android:persistent="false"
